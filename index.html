@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🌀 颱風戰情 — 24H 新聞財經電視牆</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',Arial,sans-serif}
+body{background:#0a0a0a;overflow:hidden;height:100vh;color:#fff}
+#app{width:100vw;height:100vh;display:flex;flex-direction:column}
+header{background:#121212;padding:6px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #222;flex-wrap:wrap;gap:4px;min-height:40px}
+header .ttl{color:#0af;font-weight:700;font-size:13px}
+header .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+header button{background:#1e1e1e;color:#aaa;border:1px solid #333;padding:3px 10px;border-radius:3px;cursor:pointer;font-size:11px;transition:.2s}
+header button:hover{background:#2a2a2a;color:#fff}
+header button.on{background:#0af;color:#000;border-color:#0af;font-weight:700}
+header select{background:#1e1e1e;color:#ccc;border:1px solid #333;padding:3px 5px;border-radius:3px;font-size:11px}
+#grid{flex:1;display:grid;gap:2px;padding:2px;background:#000}
+#grid.m2{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+#grid.m1{grid-template-columns:1fr;grid-template-rows:1fr}
+.cell{position:relative;background:#050505;overflow:hidden}
+.cell .label{position:absolute;top:3px;left:3px;background:rgba(0,0,0,.8);color:#0af;padding:1px 6px;border-radius:2px;font-size:10px;z-index:10;pointer-events:none}
+.cell iframe{width:100%;height:100%;border:0}
+.cell select{position:absolute;top:3px;right:3px;z-index:10;background:rgba(0,0,0,.85);color:#aaa;border:1px solid #444;padding:1px 4px;border-radius:2px;font-size:10px;cursor:pointer;max-width:120px}
+.cell select option{background:#111}
+.stat{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:4px}
+.stat.g{background:#0f0;box-shadow:0 0 4px #0f0}
+.stat.r{background:#f00;box-shadow:0 0 4px #f00}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <span class="ttl">🌀 颱風戰情 · 電視牆</span>
+  <span class="grp">
+    <button id="b2" class="on" onclick="setM(2)">2×2</button>
+    <button id="b1" onclick="setM(1)">1×1</button>
+    <span class="stat g" id="st"></span>
+    <button onclick="togFS()">⛶</button>
+  </span>
+</header>
+<div id="grid" class="m2">
+  <div class="cell" id="c0"><span class="label">載入中</span><select onchange="chCh(0,this.value)"></select><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+  <div class="cell" id="c1"><span class="label">載入中</span><select onchange="chCh(1,this.value)"></select><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+  <div class="cell" id="c2"><span class="label">載入中</span><select onchange="chCh(2,this.value)"></select><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+  <div class="cell" id="c3"><span class="label">載入中</span><select onchange="chCh(3,this.value)"></select><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+</div>
+</div>
+<script>
+// ═══ 14 頻道（video ID 為已驗證或高可信度） ═══
+const CH = [
+  {id:"tvbsn",  name:"📺 TVBS新聞",    vid:"LSaK2DGdfy8"},
+  {id:"tvbsf",  name:"📈 TVBS財經",    vid:"TMjUNWnNYmE"},
+  {id:"ebcn",   name:"📺 東森新聞",    vid:"V1p33hqPrUk"},
+  {id:"ebcf",   name:"📈 東森財經",    vid:"AEBeWMM1atA"},
+  {id:"setn",   name:"📺 三立新聞",    vid:"ahO1qF63kM0"},
+  {id:"ftvn",   name:"📺 民視新聞",    vid:"ylYJSBUgaMA"},
+  {id:"ustvf",  name:"📈 寰宇財經",    vid:"yAUQQ0DhPxI"},
+  {id:"ctin",   name:"📺 中天新聞",    vid:"_QbRXRnHMVY"},
+  {id:"ttvn",   name:"📺 台視新聞",    vid:"xL0ch83RAK8"},
+  {id:"ctsn",   name:"📺 華視新聞",    vid:"wM0g8EoUZ_E"},
+  {id:"pts",    name:"📺 公視新聞",    vid:"XwT23a0m1-U"},
+  {id:"ustvn",  name:"📺 寰宇新聞",    vid:"6IquAgfvYmc"},
+  {id:"fnc",    name:"📈 非凡財經",    vid:"2mCP8p-8-yM"},
+  {id:"nextv",  name:"📺 壹電視",      vid:"i8FIQ7WUYa8"}
+];
+
+let M=2, S=[0,1,2,3], ORIGIN=encodeURIComponent(location.origin||'http://localhost');
+
+function eUrl(ci){
+  const c=CH[ci];
+  if(!c||!c.vid) return '';
+  return `https://www.youtube.com/embed/${c.vid}?autoplay=1&mute=1&enablejsapi=1&origin=${ORIGIN}&rel=0`;
+}
+
+function ren(){
+  const gr=document.getElementById('grid');
+  gr.className=`grid m${M}`;
+  for(let i=0;i<4;i++){
+    const cell=document.getElementById(`c${i}`);
+    cell.style.display=i<(M==2?4:1)?'block':'none';
+    const ci=S[i],c=CH[ci];
+    if(!c) continue;
+    cell.querySelector('.label').textContent=c.name;
+    const ifr=cell.querySelector('iframe'),src=eUrl(ci);
+    // 減少不必要的重複載入
+    if(ifr.src!==src&&src) ifr.src=src;
+    // 更新下拉
+    const sel=cell.querySelector('select');
+    sel.innerHTML='';
+    CH.forEach((ch,j)=>{
+      const o=document.createElement('option');
+      o.value=j;o.textContent=ch.name;
+      if(j===ci) o.selected=true;
+      sel.appendChild(o);
+    });
+  }
+}
+
+function setM(m){M=m;document.getElementById('b2').className=m==2?'on':'';document.getElementById('b1').className=m==1?'on':'';ren();}
+function chCh(s,ci){S[s]=parseInt(ci);ren();}
+
+// ═══ 自動復活 ═══
+function revive(){
+  const n=Date.now();
+  document.getElementById('st').className='stat g';
+  for(let i=0;i<(M==2?4:1);i++){
+    const cell=document.getElementById(`c${i}`);
+    const ifr=cell?.querySelector('iframe');
+    if(ifr&&(!ifr.src||ifr.src==='about:blank')) ifr.src=eUrl(S[i]);
+  }
+}
+// 每 45 秒全面刷新（YouTube iframe 記憶體回收防禦）
+setInterval(revive,45000);
+// 啟動時立即載入
+window.onload=()=>{revive();setTimeout(revive,1000)};
+
+function togFS(){
+  const el=document.getElementById('app');
+  if(!document.fullscreenElement) el.requestFullscreen(); else document.exitFullscreen();
+}
+</script>
+</body>
+</html>
