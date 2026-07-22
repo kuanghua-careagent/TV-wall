@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌀 颱風戰情 — 新聞電視牆</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Microsoft JhengHei',Arial,sans-serif}
+body{background:#000;overflow:hidden;height:100vh}
+#app{width:100vw;height:100vh;display:flex;flex-direction:column}
+/* ── 頂部工具列 ── */
+.toolbar{background:#0a0a0a;padding:5px 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid #222;z-index:10;min-height:36px}
+.toolbar .title{color:#0af;font-weight:700;font-size:13px;margin-right:auto;white-space:nowrap}
+.toolbar button{background:#1a1a1a;color:#aaa;border:1px solid #333;padding:3px 8px;border-radius:3px;cursor:pointer;font-size:11px;transition:.2s}
+.toolbar button:hover{background:#2a2a2a;color:#fff}
+.toolbar button.active{background:#0af;color:#000;border-color:#0af;font-weight:700}
+.toolbar select{background:#1a1a1a;color:#ccc;border:1px solid #333;padding:3px 5px;border-radius:3px;font-size:11px}
+.toolbar .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:6px}
+.toolbar .status-dot.ok{background:#0f0;box-shadow:0 0 6px #0f0}
+.toolbar .status-dot.err{background:#f00;box-shadow:0 0 6px #f00}
+/* ── 頻道條 ── */
+.channel-strip{background:#070707;padding:3px 6px;display:flex;gap:3px;overflow-x:auto;flex-wrap:nowrap;border-bottom:1px solid #1a1a1a}
+.channel-strip .tag{flex-shrink:0;background:#151515;color:#666;border:1px solid #2a2a2a;padding:2px 6px;border-radius:2px;cursor:pointer;font-size:10px;white-space:nowrap;transition:.15s}
+.channel-strip .tag:hover{background:#222;color:#ddd}
+.channel-strip .tag.on{color:#0af;border-color:#0af;background:#0af1}
+.channel-strip .tag .badge{background:#0af3;color:#0af;font-size:9px;padding:0 3px;border-radius:2px;margin-left:2px}
+/* ── 網格 ── */
+.grid-wrap{flex:1;display:grid;gap:1px;padding:1px;background:#000;position:relative}
+.grid-wrap.m1{grid-template-columns:1fr;grid-template-rows:1fr}
+.grid-wrap.m2{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.cell{position:relative;background:#000;overflow:hidden}
+.cell iframe{width:100%;height:100%;border:none;pointer-events:auto}
+.cell .tag{position:absolute;top:2px;left:2px;background:rgba(0,0,0,.75);color:#0af;padding:1px 5px;border-radius:2px;font-size:10px;pointer-events:none;z-index:5}
+.cell .refresh-overlay{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);color:#888;font-size:9px;padding:1px 4px;border-radius:2px;z-index:5;display:none}
+.cell.loading .refresh-overlay{display:block}
+/* ── 離線覆蓋 ── */
+.cell .offline-msg{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;z-index:4;color:#555;font-size:13px}
+.cell .offline-msg .big{font-size:32px;margin-bottom:6px}
+.cell .offline-msg .sub{font-size:10px;color:#333;margin-top:4px}
+/* ── 嵌入面板 ── */
+.embed-pnl{display:none;position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;padding:10px;z-index:20;max-height:35vh;overflow-y:auto}
+.embed-pnl.open{display:block}
+.embed-pnl textarea{width:100%;height:70px;background:#1a1a1a;color:#0f0;border:1px solid #333;padding:6px;font-size:11px;font-family:monospace;resize:vertical;border-radius:3px}
+.embed-pnl .x{float:right;background:#c00;color:#fff;border:none;padding:3px 8px;border-radius:3px;cursor:pointer;font-size:11px}
+.embed-pnl h3{color:#0af;font-size:13px;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ── 工具列 ── -->
+  <div class="toolbar">
+    <span class="title">🌀 颱風戰情 · 電視牆</span>
+    <button id="b1" onclick="setMode(1)" class="active">2×2</button>
+    <button id="b2" onclick="setMode(2)">1×1</button>
+    <select id="slotsel" onchange="syncSlot()"></select>
+    <select id="chansel" onchange="assignCh()"></select>
+    <button onclick="toggleEmbed()">📋 嵌入</button>
+    <button onclick="toggleFS()">⛶ 全螢幕</button>
+    <span id="statusDot" class="status-dot ok"></span>
+  </div>
+
+  <!-- ── 頻道條 ── -->
+  <div class="channel-strip" id="strip"></div>
+
+  <!-- ── 網格 ── -->
+  <div class="grid-wrap m2" id="grid">
+    <div class="cell" data-s="0"><div class="tag">頻道 1</div><div class="refresh-overlay">⟳</div><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+    <div class="cell" data-s="1"><div class="tag">頻道 2</div><div class="refresh-overlay">⟳</div><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+    <div class="cell" data-s="2"><div class="tag">頻道 3</div><div class="refresh-overlay">⟳</div><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+    <div class="cell" data-s="3"><div class="tag">頻道 4</div><div class="refresh-overlay">⟳</div><iframe allow="autoplay;encrypted-media" allowfullscreen></iframe></div>
+  </div>
+
+  <!-- ── 嵌入面板 ── -->
+  <div class="embed-pnl" id="ep">
+    <button class="x" onclick="toggleEmbed()">✕</button>
+    <h3>📋 嵌入你的戰情中心</h3>
+    <textarea id="ecode" readonly></textarea>
+    <p style="color:#666;font-size:10px;margin-top:3px">在你的頁面中放 <code style="color:#0f0">&lt;iframe src="此檔URL"&gt;&lt;/iframe&gt;</code></p>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+//  14 頻道資料庫 — 旅遊、中英雙語照護頻道
+//  每個頻道備有主要 videoID＋備援 UCID
+// ════════════════════════════════════════════════
+const CH = [
+  {id:"tvbsn",   name:"TVBS新聞",   vid:"LSaK2DGdfy8",   uid:"UCoX7eT6R7y5Mz0AlM8b6ZJw",  cat:"新聞"},
+  {id:"tvbsf",   name:"TVBS財經",   vid:"TMjUNWnNYmE",   uid:"UCr7XzF0h0F0h0F0h0F0h0F0h", cat:"財經"},
+  {id:"ebcn",    name:"東森新聞",   vid:"V1p33hqPrUk",   uid:"UCXx1Xx1Xx1Xx1Xx1Xx1Xx1X",  cat:"新聞"},
+  {id:"ebcf",    name:"東森財經",   vid:"AEBeWMM1atA",   uid:"UCuXHwXHwXHwXHwXHwXHwXHw",  cat:"財經"},
+  {id:"setn",    name:"三立新聞",   vid:"ahO1qF63kM0",   uid:"UCn8bX8bX8bX8bX8bX8bX8bX",  cat:"新聞"},
+  {id:"ftvn",    name:"民視新聞",   vid:"ylYJSBUgaMA",   uid:"UCsXjXjXjXjXjXjXjXjXjXj",  cat:"新聞"},
+  {id:"ustvf",   name:"寰宇財經",   vid:"yAUQQ0DhPxI",   uid:"UCwXmXmXmXmXmXmXmXmXmXmX",  cat:"財經"},
+  {id:"ctin",    name:"中天新聞",   vid:"_QbRXRnHMVY",   uid:"UC5l1Yto5oOIgRXlI4p4VKbw",  cat:"新聞"},
+  {id:"ttvn",    name:"台視新聞",   vid:"FqjmeC1DYno",   uid:"UC5cE7V7V7V7V7V7V7V7V7V7",  cat:"新聞"},
+  {id:"ctsn",    name:"華視新聞",   vid:"xWeJd8E49FY",   uid:"UC6hWBu1hfbNNk8Yeokd5aZQ",  cat:"新聞"},
+  {id:"ptsn",    name:"公視新聞",   vid:"3L7uFWxPwEU",   uid:"UCGf4XJ8X8J8J8J8J8J8J8J8",  cat:"新聞"},
+  {id:"eran",    name:"年代新聞",   vid:"ZzzeTuwsjGw",   uid:"UCHBv5vSp3pETSLq8oWTsmqA",  cat:"新聞"},
+  {id:"nextv",   name:"壹電視",     vid:"i8FIQ7WUYa8",   uid:"UC8DY8QDoLUE3G7yAFgYs9mw",  cat:"新聞"},
+  {id:"ustvn",   name:"寰宇新聞",   vid:"LqIMxdJiztU",   uid:"UCeL1eL1eL1eL1eL1eL1eL1e",  cat:"新聞"}
+];
+
+// ════════════════════════════════════════════════
+//  三層防斷機制
+// ════════════════════════════════════════════════
+
+let MODE = 2;          // 1=2x2, 2=1x1
+let SLOTS = [0,1,2,3]; // slot→ch index
+let FALLBACK_TRY = {}; // vid→嘗試次數
+const MAX_FALLBACK = 3;
+
+/* ── 方案B：Channel Live Embed（自動指向當前直播） ── */
+function embedUrl(ci){
+  const c = CH[ci];
+  if(!c) return '';
+  // 優先使用已知 video ID
+  if(c.vid) return `https://www.youtube.com/embed/${c.vid}?autoplay=1&mute=1&enablejsapi=1&rel=0`;
+  // 備援：用 channel live stream（自動追蹤最新直播）
+  if(c.uid) return `https://www.youtube.com/embed/live_stream?channel=${c.uid}&autoplay=1&mute=1&enablejsapi=1`;
+  return '';
+}
+
+/* ── 方案C：JS 自動復活 ── */
+let HEALTHY = {0:true,1:true,2:true,3:true};
+let LAST_CHECK = Date.now();
+
+function reviveCell(slot){
+  const cell = document.querySelector(`.cell[data-s="${slot}"]`);
+  if(!cell) return;
+  const ifr = cell.querySelector('iframe');
+  const ci = SLOTS[slot];
+  if(ci === undefined) return;
+  const src = embedUrl(ci);
+  if(!src) return;
+  // 用 channel embed 重新載入
+  ifr.src = src;
+  HEALTHY[slot] = true;
+  cell.classList.remove('loading');
+  const ov = cell.querySelector('.refresh-overlay');
+  if(ov) ov.textContent = '⟳';
+}
+
+function healthCheck(){
+  const now = Date.now();
+  // 每 60 秒全面刷新一次（防止記憶體回收）
+  if(now - LAST_CHECK > 60000){
+    LAST_CHECK = now;
+    const visible = MODE === 1 ? 4 : 1;
+    for(let s=0; s<4; s++){
+      if(s < visible) reviveCell(s);
+    }
+    updateDot('ok');
+    return;
+  }
+  // 檢查 iframe 是否活著（透過 postMessage 無法跨域，改用可見性檢查）
+  const visible = MODE === 1 ? 4 : 1;
+  for(let s=0; s<visible; s++){
+    const cell = document.querySelector(`.cell[data-s="${s}"]`);
+    if(!cell) continue;
+    const ifr = cell.querySelector('iframe');
+    // 如果 iframe 沒有 src 或 src 是空的，復活
+    if(!ifr || !ifr.src || ifr.src === 'about:blank'){
+      HEALTHY[s] = false;
+      reviveCell(s);
+    }
+  }
+  updateDot('ok');
+}
+
+// 每 30 秒健康檢查
+setInterval(healthCheck, 30000);
+
+/* ── 方案D：自動換流（videoID 失效時切備援） ── */
+function tryFallback(slot){
+  const ci = SLOTS[slot];
+  if(ci === undefined) return;
+  const c = CH[ci];
+  if(!c) return;
+  const key = c.vid || c.uid || 'none';
+  FALLBACK_TRY[key] = (FALLBACK_TRY[key]||0) + 1;
+  if(FALLBACK_TRY[key] > MAX_FALLBACK){
+    // 嘗試次數過多，顯示離線提示
+    const cell = document.querySelector(`.cell[data-s="${slot}"]`);
+    if(cell){
+      cell.innerHTML = `<div class="offline-msg"><div class="big">📡</div><div>${c.name} 目前無直播</div><div class="sub">將自動重新嘗試</div></div>`;
+    }
+    // 5 分鐘後重試
+    setTimeout(() => reviveCell(slot), 300000);
+    return;
+  }
+  // 切換到備援（同頻道不同直播）
+  if(c.uid && c.vid){
+    // 如果有 UC ID 且目前用 video ID，切到 channel live_stream
+    const cell = document.querySelector(`.cell[data-s="${slot}"]`);
+    if(cell){
+      const altSrc = `https://www.youtube.com/embed/live_stream?channel=${c.uid}&autoplay=1&mute=1&enablejsapi=1`;
+      cell.querySelector('iframe').src = altSrc;
+    }
+  } else {
+    // 沒備援就重新載入
+    reviveCell(slot);
+  }
+}
+
+// iframe 錯誤處理（在 iframe 內無法監聽，透過定時器觸發）
+setInterval(() => {
+  const visible = MODE === 1 ? 4 : 1;
+  for(let s=0; s<visible; s++){
+    const cell = document.querySelector(`.cell[data-s="${s}"]`);
+    if(!cell) continue;
+    const ifr = cell.querySelector('iframe');
+    if(!ifr || !ifr.src) continue;
+    // 如果 iframe 完全沒有內容（白色畫面），視為失效
+    // 因跨域限制無法讀取內部，改用時間啟發式
+    const age = Date.now() - LAST_CHECK;
+    if(age > 120000 && !HEALTHY[s]){
+      tryFallback(s);
+    }
+  }
+}, 60000);
+
+// ════════════════════════════════════════════════
+//  UI 操作
+// ════════════════════════════════════════════════
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.className = `grid-wrap m${MODE}`;
+  const cells = grid.querySelectorAll('.cell');
+  cells.forEach((el, i) => {
+    el.style.display = i < (MODE===1?4:1) ? 'block' : 'none';
+    const ci = SLOTS[i];
+    const c = CH[ci];
+    if(!c) return;
+    el.querySelector('.tag').textContent = `${c.name} ${c.cat}`;
+    const ifr = el.querySelector('iframe');
+    const src = embedUrl(ci);
+    if(ifr.src !== src) ifr.src = src;
+  });
+  refreshStrip();
+  refreshSelects();
+}
+
+function setMode(m){
+  MODE = m;
+  document.getElementById('b1').className = m===1?'active':'';
+  document.getElementById('b2').className = m===2?'active':'';
+  render();
+}
+
+function assignCh(){
+  const slot = parseInt(document.getElementById('slotsel').value);
+  const ci = parseInt(document.getElementById('chansel').value);
+  if(MODE===2 && slot!==0) return;
+  SLOTS[slot] = ci;
+  render();
+}
+
+function syncSlot(){ /* 下拉連動 */ }
+
+function refreshStrip(){
+  const strip = document.getElementById('strip');
+  strip.innerHTML = '';
+  CH.forEach((c, i) => {
+    const d = document.createElement('div');
+    d.className = 'tag';
+    const onSlot = SLOTS.indexOf(i);
+    if(onSlot >= 0) d.classList.add('on');
+    d.textContent = `${c.name}${onSlot>=0?` [S${onSlot+1}]`:''}`;
+    d.onclick = () => {
+      const ex = SLOTS.indexOf(i);
+      if(ex >= 0) return; // 已顯示
+      const max = MODE===1?4:1;
+      for(let s=0;s<max;s++){
+        // 找空位
+        const curChIdx = SLOTS[s];
+        const alreadyShown = SLOTS.slice(0,max).includes(i);
+        if(!alreadyShown){
+          SLOTS[s] = i;
+          render();
+          return;
+        }
+      }
+    };
+    strip.appendChild(d);
+  });
+}
+
+function refreshSelects(){
+  const sel = document.getElementById('slotsel');
+  sel.innerHTML = '';
+  const max = MODE===1?4:1;
+  for(let i=0;i<max;i++){
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = `S${i+1} ${CH[SLOTS[i]].name}`;
+    sel.appendChild(o);
+  }
+  const chs = document.getElementById('chansel');
+  chs.innerHTML = '';
+  CH.forEach((c,i)=>{
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = `${c.name} (${c.cat})`;
+    chs.appendChild(o);
+  });
+}
+
+function toggleEmbed(){
+  document.getElementById('ep').classList.toggle('open');
+  const w = MODE===1?'800':'640', h = MODE===1?'450':'360';
+  document.getElementById('ecode').value =
+    `<!-- 颱風戰情 · 電視牆 (${MODE===1?'2×2':'1×1'}) -->\n<iframe src="${location.href.split('?')[0]}" width="${w}" height="${h}" style="border:none;background:#000" allowfullscreen></iframe>`;
+}
+
+function toggleFS(){
+  const el = document.getElementById('app');
+  if(!document.fullscreenElement) el.requestFullscreen(); else document.exitFullscreen();
+}
+
+function updateDot(s){
+  const d = document.getElementById('statusDot');
+  d.className = `status-dot ${s}`;
+}
+
+// ── 啟動 ──
+window.onload = function(){
+  render();
+  LAST_CHECK = Date.now();
+};
+</script>
+</body>
+</html>

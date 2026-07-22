@@ -50,19 +50,19 @@ header select{background:#1e1e1e;color:#ccc;border:1px solid #333;padding:3px 5p
 // ═══ 14 頻道（video ID 為已驗證或高可信度） ═══
 const CH = [
   {id:"tvbsn",  name:"📺 TVBS新聞",    vid:"LSaK2DGdfy8"},
+  {id:"tvbsf",  name:"📈 TVBS財經",    vid:"TMjUNWnNYmE"},
   {id:"ebcn",   name:"📺 東森新聞",    vid:"V1p33hqPrUk"},
   {id:"ebcf",   name:"📈 東森財經",    vid:"AEBeWMM1atA"},
   {id:"setn",   name:"📺 三立新聞",    vid:"ahO1qF63kM0"},
   {id:"ftvn",   name:"📺 民視新聞",    vid:"ylYJSBUgaMA"},
   {id:"ustvf",  name:"📈 寰宇財經",    vid:"yAUQQ0DhPxI"},
-  {id:"ctin",   name:"📺 中天新聞",    vid:"vr3XyVCR4T0"},
-  {id:"ttvn",   name:"📺 台視新聞",    vid:"9iRAqBMakXY"},
-  {id:"pts",    name:"📺 公視新聞",    vid:"quwqlazU-c8"},
+  {id:"ctin",   name:"📺 中天新聞",    vid:"_QbRXRnHMVY"},
+  {id:"ttvn",   name:"📺 台視新聞",    vid:"xL0ch83RAK8"},
   {id:"ctsn",   name:"📺 華視新聞",    vid:"wM0g8EoUZ_E"},
+  {id:"pts",    name:"📺 公視新聞",    vid:"XwT23a0m1-U"},
   {id:"ustvn",  name:"📺 寰宇新聞",    vid:"6IquAgfvYmc"},
-  {id:"fnc",    name:"📈 非凡財經",    vid:"eA6Aczd3FZM"},
-  {id:"nextv",  name:"📺 壹電視",      vid:"i8FIQ7WUYa8"},
-  {id:"ctv",    name:"📺 中視新聞",    vid:"TCnaIE_SAtM"}
+  {id:"fnc",    name:"📈 非凡財經",    vid:"2mCP8p-8-yM"},
+  {id:"nextv",  name:"📺 壹電視",      vid:"i8FIQ7WUYa8"}
 ];
 
 let M=2, S=[0,1,2,3], ORIGIN=encodeURIComponent(location.origin||'http://localhost');
