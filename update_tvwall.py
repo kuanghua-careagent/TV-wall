@@ -6,7 +6,7 @@ KEY = "AIzaSyAkTASgcbIA9lfAXmaMsRshd8jPBFI7rJU"
 # 14 台真頻道 ID（index.html 的頻道 id → channelId）
 CHANNELS = {
     "tvbsn": "UC5nwNW4KdC0SzrhF9BXEYOQ", "ebcn": "UCR3asjvr_WAaxwJYEDV_Bfw",
-    "ebcf": "UCuzqko_GKcj9922M1gUo__w", "setn": None, "ftvn": "UC2VmWn8dAqkzlQqvy02E1PA",
+    "ebcf": "UCuzqko_GKcj9922M1gUo__w", "setn": "UC2TuODJhC03pLgd6MpWP0iw", "ftvn": "UC2VmWn8dAqkzlQqvy02E1PA",
     "ustvf": "UCSZwcE1d1SAGyc1yvQGSOjQ", "ctin": "UC5l1Yto5oOIgRXlI4p4VKbw",
     "ttvn": "UC8ROUUjHzEQm-ndb69CX8Ww", "pts": "UCexpzYDEnfmAvPSfG4xbcjA",
     "ctsn": "UCpu3bemTQwAU8PqM4kJdoEQ", "ustvn": "UCiOR3zQCU-tLza5g1MuqABA",
