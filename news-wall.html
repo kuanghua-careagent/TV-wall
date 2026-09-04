@@ -85,20 +85,20 @@ body{background:#000;overflow:hidden;height:100vh}
 //  每個頻道備有主要 videoID＋備援 UCID
 // ════════════════════════════════════════════════
 const CH = [
-  {id:"tvbsn",   name:"TVBS新聞",   vid:"LSaK2DGdfy8",   uid:"UCoX7eT6R7y5Mz0AlM8b6ZJw",  cat:"新聞"},
+  {id:"tvbsn",   name:"TVBS新聞",   vid:"LSaK2DGdfy8",   uid:"UC5nwNW4KdC0SzrhF9BXEYOQ",  cat:"新聞"},
   {id:"tvbsf",   name:"TVBS財經",   vid:"TMjUNWnNYmE",   uid:"UCr7XzF0h0F0h0F0h0F0h0F0h", cat:"財經"},
-  {id:"ebcn",    name:"東森新聞",   vid:"V1p33hqPrUk",   uid:"UCXx1Xx1Xx1Xx1Xx1Xx1Xx1X",  cat:"新聞"},
-  {id:"ebcf",    name:"東森財經",   vid:"AEBeWMM1atA",   uid:"UCuXHwXHwXHwXHwXHwXHwXHw",  cat:"財經"},
+  {id:"ebcn",    name:"東森新聞",   vid:"V1p33hqPrUk",   uid:"UCR3asjvr_WAaxwJYEDV_Bfw",  cat:"新聞"},
+  {id:"ebcf",    name:"東森財經",   vid:"AEBeWMM1atA",   uid:"UCuzqko_GKcj9922M1gUo__w",  cat:"財經"},
   {id:"setn",    name:"三立新聞",   vid:"ahO1qF63kM0",   uid:"UCn8bX8bX8bX8bX8bX8bX8bX",  cat:"新聞"},
-  {id:"ftvn",    name:"民視新聞",   vid:"ylYJSBUgaMA",   uid:"UCsXjXjXjXjXjXjXjXjXjXj",  cat:"新聞"},
-  {id:"ustvf",   name:"寰宇財經",   vid:"yAUQQ0DhPxI",   uid:"UCwXmXmXmXmXmXmXmXmXmXmX",  cat:"財經"},
+  {id:"ftvn",    name:"民視新聞",   vid:"ylYJSBUgaMA",   uid:"UC2VmWn8dAqkzlQqvy02E1PA",  cat:"新聞"},
+  {id:"ustvf",   name:"寰宇財經",   vid:"yAUQQ0DhPxI",   uid:"UCSZwcE1d1SAGyc1yvQGSOjQ",  cat:"財經"},
   {id:"ctin",    name:"中天新聞",   vid:"_QbRXRnHMVY",   uid:"UC5l1Yto5oOIgRXlI4p4VKbw",  cat:"新聞"},
   {id:"ttvn",    name:"台視新聞",   vid:"FqjmeC1DYno",   uid:"UC5cE7V7V7V7V7V7V7V7V7V7",  cat:"新聞"},
-  {id:"ctsn",    name:"華視新聞",   vid:"xWeJd8E49FY",   uid:"UC6hWBu1hfbNNk8Yeokd5aZQ",  cat:"新聞"},
+  {id:"ctsn",    name:"華視新聞",   vid:"xWeJd8E49FY",   uid:"UCpu3bemTQwAU8PqM4kJdoEQ",  cat:"新聞"},
   {id:"ptsn",    name:"公視新聞",   vid:"3L7uFWxPwEU",   uid:"UCGf4XJ8X8J8J8J8J8J8J8J8",  cat:"新聞"},
-  {id:"eran",    name:"年代新聞",   vid:"ZzzeTuwsjGw",   uid:"UCHBv5vSp3pETSLq8oWTsmqA",  cat:"新聞"},
+  {id:"eran",    name:"年代新聞",   vid:"ZzzeTuwsjGw",   uid:"UCBuHkb1AS_yRQ71meFNQ3VQ",  cat:"新聞"},
   {id:"nextv",   name:"壹電視",     vid:"i8FIQ7WUYa8",   uid:"UC8DY8QDoLUE3G7yAFgYs9mw",  cat:"新聞"},
-  {id:"ustvn",   name:"寰宇新聞",   vid:"LqIMxdJiztU",   uid:"UCeL1eL1eL1eL1eL1eL1eL1e",  cat:"新聞"}
+  {id:"ustvn",   name:"寰宇新聞",   vid:"LqIMxdJiztU",   uid:"UCiOR3zQCU-tLza5g1MuqABA",  cat:"新聞"}
 ];
 
 // ════════════════════════════════════════════════
@@ -114,10 +114,10 @@ const MAX_FALLBACK = 3;
 function embedUrl(ci){
   const c = CH[ci];
   if(!c) return '';
-  // 優先使用已知 video ID
-  if(c.vid) return `https://www.youtube.com/embed/${c.vid}?autoplay=1&mute=1&enablejsapi=1&rel=0`;
-  // 備援：用 channel live stream（自動追蹤最新直播）
+  // 優先使用頻道 live_stream（自動追蹤最新直播 — 新聞永遠更新！）
   if(c.uid) return `https://www.youtube.com/embed/live_stream?channel=${c.uid}&autoplay=1&mute=1&enablejsapi=1`;
+  // 備援：已知 video ID
+  if(c.vid) return `https://www.youtube.com/embed/${c.vid}?autoplay=1&mute=1&enablejsapi=1&rel=0`;
   return '';
 }
 
