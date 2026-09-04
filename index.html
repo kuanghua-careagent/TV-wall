@@ -69,7 +69,10 @@ let M=2, S=[0,1,2,3], ORIGIN=encodeURIComponent(location.origin||'http://localho
 
 function eUrl(ci){
   const c=CH[ci];
-  if(!c||!c.vid) return '';
+  if(!c) return '';
+  // 直播優先：頻道 live_stream 自動追最新（新聞永遠更新）
+  if(c.uid) return `https://www.youtube.com/embed/live_stream?channel=${c.uid}?autoplay=1&mute=1&origin=${ORIGIN}`.replace('?autoplay','&autoplay');
+  if(!c.vid) return '';
   return `https://www.youtube.com/embed/${c.vid}?autoplay=1&mute=1&enablejsapi=1&origin=${ORIGIN}&rel=0`;
 }
 
