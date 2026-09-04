@@ -114,8 +114,8 @@ function revive(){
 }
 // 每 45 秒全面刷新（YouTube iframe 記憶體回收防禦）
 setInterval(revive,45000);
-// 啟動時立即載入
-window.onload=()=>{revive();setTimeout(revive,1000)};
+// 啟動時立即載入（ren 渲染頻道下拉 + revive 載入影片）
+window.onload=()=>{ren();revive();setTimeout(revive,1000)};
 
 function togFS(){
   const el=document.getElementById('app');
