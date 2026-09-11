@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 35 組帳號功能分析戰情面板</title>
+<style>
+:root{
+  --bg:#05090f;--panel:#0b111a;--panel2:#101923;--line:#1c2b3b;
+  --cyan:#00e5ff;--green:#35e67b;--amber:#ffb52b;--red:#ff5566;--purple:#aa83ff;
+  --text:#e8f1f7;--muted:#718497;--mono:"IBM Plex Mono","Consolas",monospace;--sans:Inter,"Noto Sans TC",system-ui,sans-serif
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans)}
+body{min-height:100vh;background:
+ radial-gradient(1000px 500px at 2% 0%,rgba(0,229,255,.09),transparent 60%),
+ radial-gradient(700px 450px at 100% 100%,rgba(170,131,255,.07),transparent 60%),#05090f}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.26;background-image:
+ linear-gradient(rgba(0,229,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.045) 1px,transparent 1px);background-size:40px 40px}
+header{position:sticky;top:0;z-index:20;background:rgba(5,9,15,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 22px}
+.title{font:700 18px var(--mono);letter-spacing:.6px}
+.sub{font:12px var(--mono);color:var(--muted);margin-top:3px}
+.header-right{display:flex;align-items:center;gap:15px;font:12px var(--mono)}
+.live{color:var(--green);border:1px solid rgba(53,230,123,.25);padding:5px 8px}
+.live i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green);margin-right:6px}
+.clock{color:var(--cyan)}
+main{max-width:2000px;margin:auto;padding:18px 3.2vw 85px}
+.top{padding-left:3.2vw;padding-right:3.2vw}
+footer{padding-left:3.2vw;padding-right:3.2vw}
+@media(max-width:1400px){main{padding:18px 22px 85px}.top{padding-left:22px;padding-right:22px}footer{padding-left:22px;padding-right:22px}}
+.label{font:12px var(--mono);color:var(--cyan);letter-spacing:1px}
+.card{background:linear-gradient(145deg,rgba(16,25,35,.96),rgba(7,12,18,.96));border:1px solid var(--line);position:relative}
+.card:before{content:"";position:absolute;top:0;left:0;width:34px;height:2px;background:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.6)}
+.overview{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:10px;margin:10px 0 14px}
+.ov{padding:13px;min-height:84px}.ov .v{font:700 24px var(--mono);margin-top:7px}.ov small{display:block;color:var(--muted);font:11px var(--mono);margin-top:4px}
+.account-nav{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.account{
+  cursor:pointer;padding:11px;border:1px solid var(--line);background:rgba(255,255,255,.015);transition:.15s
+}
+.account:hover,.account.active{border-color:var(--cyan);background:rgba(0,229,255,.045);box-shadow:0 0 15px rgba(0,229,255,.08) inset}
+.account .name{font:600 12px var(--mono)} .account .desc{color:var(--muted);font-size:11px;margin-top:4px}
+.account .mini{display:flex;justify-content:space-between;margin-top:8px;font:11px var(--mono)}
+.green{color:var(--green)}.amber{color:var(--amber)}.red{color:var(--red)}.purple{color:var(--purple)}.cyan{color:var(--cyan)}
+.workspace{display:grid;grid-template-columns:275px 1fr 310px;gap:12px}
+.panel{padding:13px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.head h2{margin:0;font:600 12px var(--mono);letter-spacing:.8px}.head span{font:11px var(--mono);color:var(--muted)}
+.ai-list{display:grid;gap:7px}
+.ai-card{padding:9px;border:1px solid var(--line);cursor:pointer;background:rgba(255,255,255,.012)}
+.ai-card:hover,.ai-card.active{border-color:var(--cyan);background:rgba(0,229,255,.035)}
+.ai-top{display:flex;justify-content:space-between;align-items:center}
+.ai-name{font:600 10px var(--mono)}.role{font-size:11px;color:var(--muted);margin-top:3px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px}.dot.online{background:var(--green);box-shadow:0 0 7px var(--green)}.dot.busy{background:var(--amber);box-shadow:0 0 7px var(--amber)}.dot.offline{background:#566575}
+.ai-meta{display:flex;justify-content:space-between;color:var(--muted);font:12px var(--mono);margin-top:8px}
+.ai-detail{display:grid;grid-template-rows:auto auto auto 1fr;gap:10px}
+.detail-title{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:9px}
+.detail-title h3{margin:0;font:700 16px var(--mono)}.detail-title .type{font:11px var(--mono);color:var(--cyan);border:1px solid rgba(0,229,255,.3);padding:4px 7px}
+.role-box{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.role-box .box,.feature,.analysis-box{border:1px solid var(--line);padding:9px;background:rgba(255,255,255,.012)}
+.box .k,.feature .k,.analysis-box .k{font:11px var(--mono);color:var(--muted)}.box .v{margin-top:4px;font:600 11px var(--mono)}
+.feature-list{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.feature{min-height:64px}.feature .v{font-size:12px;margin-top:5px;line-height:1.35}.feature .bar{height:4px;background:#111c27;margin-top:7px}.feature .bar i{display:block;height:100%;background:var(--cyan)}
+.analysis{display:grid;grid-template-columns:1.2fr .8fr;gap:8px}
+.analysis-box{min-height:150px}.analysis-box p{font-size:12px;line-height:1.55;color:#b7c5d0;margin:6px 0 0}
+.signal{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #172534;font:11px var(--mono)}
+.signal:last-child{border-bottom:0}
+.radar{width:150px;height:150px;margin:3px auto 8px}
+.radar svg{width:100%;height:100%}
+.score{text-align:center;font:700 25px var(--mono);color:var(--cyan)}.score small{display:block;color:var(--muted);font:11px var(--mono);margin-top:3px}
+.stat-list{display:grid;gap:8px;margin-top:12px}.stat{display:flex;justify-content:space-between;font:11px var(--mono)}.stat b{color:var(--text)}
+.right-block{margin-bottom:12px}.alert{padding:8px;border:1px solid var(--line);margin-bottom:7px;font-size:11px;line-height:1.4}.alert b{font-family:var(--mono)}.alert .t{display:block;color:var(--muted);font:12px var(--mono);margin-top:3px}
+.barline{height:6px;background:#101a24;margin-top:6px}.barline i{display:block;height:100%}
+.bottom{display:grid;grid-template-columns:1.15fr .85fr;gap:12px;margin-top:12px}
+.matrix{width:100%;border-collapse:collapse;font-size:11px}.matrix th{color:var(--muted);font:12px var(--mono);text-align:left;border-bottom:1px solid var(--line);padding:6px}.matrix td{padding:7px 6px;border-bottom:1px solid #14212f}.pill{border:1px solid;padding:3px 5px;font:12px var(--mono)}
+.event{display:grid;grid-template-columns:55px 8px 1fr;gap:7px;margin-bottom:9px}.event .time{font:12px var(--mono);color:var(--muted)}.event .n{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 7px var(--cyan);margin-top:3px}.event .txt{font-size:11px;line-height:1.45}
+footer{position:fixed;bottom:0;left:0;right:0;background:rgba(5,9,15,.94);border-top:1px solid var(--line);z-index:25;padding:8px 22px;display:flex;align-items:center;gap:18px;font:11px var(--mono);color:var(--muted)}
+footer b{color:var(--text)}.ticker{flex:1;overflow:hidden;white-space:nowrap}.ticker span{margin-right:45px}.ticker strong{color:var(--cyan)}
+@media(max-width:1200px){.workspace{grid-template-columns:235px 1fr}.workspace>.rightcol{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px}.right-block{margin-bottom:0}.bottom{grid-template-columns:1fr}.overview{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){main{padding:12px}.account-nav{grid-template-columns:1fr 1fr}.workspace{grid-template-columns:1fr}.workspace>.rightcol{grid-column:auto;display:block}.overview{grid-template-columns:1fr 1fr}.role-box,.feature-list,.analysis{grid-template-columns:1fr}.header-right .live{display:none}}
+
+#neural-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+main,header,footer{position:relative;z-index:1}
+
+/* ---- chat drawer ---- */
+.chat-btn{border:1px solid var(--line);background:rgba(0,229,255,.06);color:var(--cyan);border-radius:4px;width:22px;height:22px;line-height:20px;text-align:center;font-size:11px;cursor:pointer;flex-shrink:0}
+.chat-btn:hover{border-color:var(--cyan);background:rgba(0,229,255,.15)}
+.scrim{position:fixed;inset:0;background:rgba(2,4,7,.55);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:40}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:380px;max-width:92vw;
+ background:linear-gradient(165deg,rgba(16,25,35,.92),rgba(7,12,18,.94));
+ backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);
+ border-left:1px solid var(--line);box-shadow:-12px 0 40px -16px rgba(0,229,255,.2);
+ transform:translateX(100%);transition:transform .22s ease;z-index:45;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-head{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.drawer-head .who{display:flex;align-items:center;gap:9px}
+.drawer-head .name{font:600 14px var(--mono)}
+.drawer-head .acct{font:12px var(--mono);color:var(--muted);margin-top:2px}
+.drawer-close{background:none;border:1px solid var(--line);color:var(--muted);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:12px}
+.drawer-close:hover{color:var(--text);border-color:var(--cyan)}
+.drawer-status{padding:9px 18px;border-bottom:1px solid var(--line);display:flex;gap:16px;font:12px var(--mono);color:var(--muted)}
+.drawer-status b{color:var(--text)}
+.chat{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:11px}
+.msg{max-width:85%;font-size:12px;line-height:1.5;padding:8px 11px;border-radius:8px;font-family:var(--sans)}
+.msg.me{align-self:flex-end;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.28)}
+.msg.ai{align-self:flex-start;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.msg .role{font:11px var(--mono);color:var(--muted);display:block;margin-bottom:3px}
+.composer{border-top:1px solid var(--line);padding:11px 14px;display:flex;gap:8px}
+.composer input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--text);font-family:var(--sans);font-size:12.5px;outline:none}
+.composer input:focus{border-color:var(--cyan)}
+.composer button{background:var(--cyan);color:#00232b;border:none;border-radius:6px;padding:0 15px;font:600 11.5px var(--mono);cursor:pointer}
+.composer button:disabled{opacity:.4;cursor:default}
+.empty-hint{margin:auto;text-align:center;color:var(--muted);font:10.5px var(--mono);padding:20px}
+</style>
+</head>
+<body>
+<canvas id="neural-canvas"></canvas>
+<header>
+  <div class="top">
+    <div>
+      <div class="title">AI・科技戰情監控中心 // 35 AI FUNCTION INTELLIGENCE</div>
+      <div class="sub">核心架構：1 帳號 = 7 組 AI ／ 5 帳號 = 35 組 AI ／ 以「功能分析」而非單純平台列表為中心</div>
+    </div>
+    <div class="header-right"><span class="live"><i></i>LIVE</span><span class="clock" id="clock">--:--:--</span></div>
+  </div>
+</header>
+
+<main>
+  <div class="label">01 / 五組帳號總控</div>
+  <section class="overview">
+    <div class="card ov"><div class="label">TOTAL AI FORCE</div><div class="v cyan">35 組</div><small>5 帳號 × 每帳號 7 組 AI</small></div>
+    <div class="card ov"><div class="label">ONLINE</div><div class="v green" id="online">--</div><small>目前可用 AI</small></div>
+    <div class="card ov"><div class="label">ACTIVE</div><div class="v amber" id="active">--</div><small>正在執行功能</small></div>
+    <div class="card ov"><div class="label">加權指數</div><div class="v purple" id="ovMarket">--</div><small>即時（每 60 秒更新）</small></div>
+    <div class="card ov"><div class="label">本機節點</div><div class="v" style="font-size:13px"><span data-node="寇德 CODER-AI">--</span> <span data-node="X1 小鉉">--</span></div><small>寇德 / X1（自動更新）</small></div>
+  </section>
+
+  <div class="label">02 / ACCOUNT COMMAND SELECTOR</div>
+  <section class="account-nav" id="accounts"></section>
+
+  <section class="workspace">
+    <div class="card panel">
+      <div class="head"><h2>帳號內 7 組 AI</h2><span id="accountTitle">—</span></div>
+      <div class="ai-list" id="aiList"></div>
+    </div>
+
+    <div class="card panel ai-detail">
+      <div class="detail-title">
+        <div><div class="label">SELECTED AI</div><h3 id="aiTitle">—</h3></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="chat-btn" title="開啟對話" onclick="openChat(selectedAccount,selectedAI)">💬</button>
+          <button class="chat-btn" title="開啟平台網頁" onclick="openSite(selectedAccount,selectedAI)">🔗</button>
+          <div class="type" id="aiStatus">—</div>
+        </div>
+      </div>
+
+      <div class="role-box">
+        <div class="box"><div class="k">AI FUNCTION ROLE</div><div class="v" id="aiRole">—</div></div>
+        <div class="box"><div class="k">PRIMARY MISSION</div><div class="v" id="aiMission">—</div></div>
+        <div class="box"><div class="k">MODEL / PLATFORM</div><div class="v" id="aiPlatform">—</div></div>
+        <div class="box"><div class="k">CURRENT TASK</div><div class="v" id="aiTask">—</div></div>
+      </div>
+
+      <div>
+        <div class="head"><h2>功能模組分析</h2><span>FUNCTION MODULES</span></div>
+        <div class="feature-list" id="features"></div>
+      </div>
+
+      <div class="analysis">
+        <div class="analysis-box"><div class="k">AI 分析判讀</div><p id="analysisText">—</p></div>
+        <div class="analysis-box"><div class="k">任務品質 / 風險訊號</div><div id="signals"></div></div>
+      </div>
+    </div>
+
+    <div class="rightcol">
+      <div class="card panel right-block">
+        <div class="head"><h2>AI 戰力評分</h2><span>FUNCTION SCORE</span></div>
+        <div class="radar">
+          <svg viewBox="0 0 150 150">
+            <g transform="translate(75,75)" fill="none" stroke="#203244">
+              <polygon points="0,-62 59,-19 36,50 -36,50 -59,-19" />
+              <polygon points="0,-43 41,-13 25,35 -25,35 -41,-13" />
+              <polygon points="0,-23 22,-7 13,19 -13,19 -22,-7" />
+              <line x1="0" y1="-62" x2="0" y2="0"/><line x1="59" y1="-19" x2="0" y2="0"/><line x1="36" y1="50" x2="0" y2="0"/><line x1="-36" y1="50" x2="0" y2="0"/><line x1="-59" y1="-19" x2="0" y2="0"/>
+              <polygon id="radarPoly" fill="rgba(0,229,255,.10)" stroke="#00e5ff" stroke-width="1.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="score" id="score">--<small>/ 100</small></div>
+        <div class="stat-list">
+          <div class="stat"><span>推理</span><b id="s1">--</b></div><div class="stat"><span>研究</span><b id="s2">--</b></div><div class="stat"><span>自動化</span><b id="s3">--</b></div><div class="stat"><span>創作</span><b id="s4">--</b></div><div class="stat"><span>資料處理</span><b id="s5">--</b></div>
+        </div>
+      </div>
+
+      <div class="card panel right-block">
+        <div class="head"><h2>帳號資源狀態</h2><span>ACCOUNT HEALTH</span></div>
+        <div class="stat"><span>API 用量</span><b>68%</b></div><div class="barline"><i style="width:68%;background:var(--cyan)"></i></div>
+        <div class="stat" style="margin-top:10px"><span>任務佇列</span><b>41%</b></div><div class="barline"><i style="width:41%;background:var(--amber)"></i></div>
+        <div class="stat" style="margin-top:10px"><span>今日成本</span><b>$42.80</b></div><div class="barline"><i style="width:57%;background:var(--purple)"></i></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom">
+    <div class="card panel">
+      <div class="head"><h2>03 / 35 組 AI 功能配置矩陣</h2><span>ROLE × MISSION × STATUS</span></div>
+      <table class="matrix"><thead><tr><th>帳號</th><th>AI-01</th><th>AI-02</th><th>AI-03</th><th>AI-04</th><th>AI-05</th><th>AI-06</th><th>AI-07</th></tr></thead><tbody id="matrix"></tbody></table>
+    </div>
+    <div class="card panel">
+      <div class="head"><h2>04 / 即時戰情事件</h2><span>EVENT STREAM</span></div>
+      <div class="event"><div class="time">16:38</div><div class="n"></div><div class="txt"><b>elevate88</b> AI-05 完成競品情報交叉驗證。</div></div>
+      <div class="event"><div class="time">16:34</div><div class="n"></div><div class="txt"><b>kuanghua99</b> AI-02 進入深度研究模式。</div></div>
+      <div class="event"><div class="time">16:31</div><div class="n"></div><div class="txt"><b>aikmph88</b> AI-07 發現高風險資料來源，已標記。</div></div>
+      <div class="event"><div class="time">16:27</div><div class="n"></div><div class="txt"><b>ORCHESTRATOR</b> 將 3 項任務重新分派至低延遲 AI。</div></div>
+      <div class="event"><div class="time">16:22</div><div class="n"></div><div class="txt"><b>SYSTEM</b> 五組帳號健康度維持 NORMAL。</div></div>
+    </div>
+  </section>
+</main>
+
+<footer><b>35 AI COMMAND</b><div class="ticker"><span><strong>LIVE:</strong> AI-02 研究任務執行中</span><span><strong>LIVE:</strong> AI-05 情報交叉驗證</span><span><strong>LIVE:</strong> AI-07 風險監控</span></div><span>SYNC <b id="sync">--:--:--</b></span></footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="who">
+      <span class="dot online" id="dwDot"></span>
+      <div>
+        <div class="name" id="dwName">—</div>
+        <div class="acct" id="dwAcct">—</div>
+      </div>
+    </div>
+    <button class="drawer-close" id="dwClose">✕</button>
+  </div>
+  <div class="drawer-status">
+    <span>狀態 <b id="dwStatus">—</b></span>
+    <span>平台 <b id="dwPlatform">—</b></span>
+  </div>
+  <div class="chat" id="dwChat"></div>
+  <div class="composer">
+    <input id="dwInput" type="text" placeholder="直接跟這組 AI 對話…">
+    <button id="dwSend">送出</button>
+  </div>
+</aside>
+
+<script>
+const accounts=[
+ {name:"kuanghua99",alias:"策略情報帳號",focus:"策略研究 / 情報",platforms:["Claude","GPT","Gemini","DeepSeek","Manus","Genspark","Groq"]},
+ {name:"kuanghua00",alias:"內容生產帳號",focus:"內容 / 行銷 / 創作",platforms:["GPT","Claude","Gemini","Genspark","Manus","Groq","DeepSeek"]},
+ {name:"elevate88",alias:"數據分析帳號",focus:"資料 / 商業分析",platforms:["DeepSeek","GPT","Claude","Gemini","Groq","Manus","Genspark"]},
+ {name:"aiworker99999",alias:"自動化執行帳號",focus:"Agent / Workflow",platforms:["Manus","GPT","Claude","Groq","Gemini","DeepSeek","Genspark"]},
+ {name:"aikmph88",alias:"戰情監控帳號",focus:"監控 / 預警 / 風控",platforms:["Genspark","GPT","Claude","Gemini","DeepSeek","Groq","Manus"]}
+];
+const roles=[
+ ["總指揮 AI","策略總結與決策支援","建立跨來源高階判讀"],
+ ["研究分析 AI","深度研究與證據整理","拆解議題、找出關鍵證據"],
+ ["情報搜尋 AI","外部情報掃描","持續追蹤新資料與趨勢"],
+ ["資料分析 AI","資料清洗、比較、統計","從資料找出異常與模式"],
+ ["內容生成 AI","報告、簡報、文案生成","把分析轉成可交付成果"],
+ ["自動化 AI","工作流與任務編排","自動分派與串接工具"],
+ ["風險監控 AI","可信度、異常、風險","持續監看並提出告警"]
+];
+const sampleTasks=["策略決策摘要","產業深度研究","科技情報掃描","數據異常分析","投資報告生成","多步驟任務執行","風險訊號監控"];
+let selectedAccount=0,selectedAI=0;
+
+function makeData(){
+  let seed=20260908;
+  const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280}
+  return accounts.map((a,ai)=>Array.from({length:7},(_,i)=>{
+    const r=rnd();return {
+      role:roles[i][0],purpose:roles[i][1],mission:roles[i][2],platform:a.platforms[i],
+      status:r>.18?(r>.63?"busy":"online"):"offline",task:sampleTasks[i],score:86+Math.floor(rnd()*12),
+      features:[82+Math.floor(rnd()*16),75+Math.floor(rnd()*20),70+Math.floor(rnd()*25),78+Math.floor(rnd()*18),80+Math.floor(rnd()*19)]
+    }
+  }))
+}
+const data=makeData();
+
+function renderAccounts(){
+ document.getElementById("accounts").innerHTML=accounts.map((a,i)=>`<div class="account ${i===selectedAccount?"active":""}" onclick="pickAccount(${i})">
+ <div class="name">${a.name}</div><div class="desc">${a.alias} · ${a.focus}</div>
+ <div class="mini"><span>${data[i].filter(x=>x.status!=="offline").length}/7 ONLINE</span><span class="${data[i].filter(x=>x.status==="busy").length?'amber':'green'}">${data[i].filter(x=>x.status==="busy").length} ACTIVE</span></div></div>`).join("");
+}
+function renderAIList(){
+ const a=accounts[selectedAccount];
+ document.getElementById("accountTitle").textContent=a.name+" // "+a.focus;
+ document.getElementById("aiList").innerHTML=data[selectedAccount].map((x,i)=>`<div class="ai-card ${i===selectedAI?"active":""}" onclick="pickAI(${i})">
+ <div class="ai-top"><span class="ai-name"><span class="dot ${x.status}"></span>AI-${String(i+1).padStart(2,"0")} ${x.role}</span><span style="display:flex;align-items:center;gap:6px"><span class="${x.status==="busy"?"amber":x.status==="online"?"green":"muted"}">${x.status.toUpperCase()}</span><button class="chat-btn" title="開啟對話" onclick="event.stopPropagation();openChat(${selectedAccount},${i})">💬</button><button class="chat-btn" title="開啟平台網頁" onclick="event.stopPropagation();openSite(${selectedAccount},${i})">🔗</button></span></div>
+ <div class="role">${x.purpose}</div><div class="ai-meta"><span>${x.platform}</span><span>SCORE ${x.score}</span></div></div>`).join("");
+}
+function renderDetail(){
+ const x=data[selectedAccount][selectedAI];
+ document.getElementById("aiTitle").textContent=`AI-${String(selectedAI+1).padStart(2,"0")} / ${x.role}`;
+ document.getElementById("aiStatus").textContent=x.status.toUpperCase();
+ document.getElementById("aiRole").textContent=x.purpose;document.getElementById("aiMission").textContent=x.mission;
+ document.getElementById("aiPlatform").textContent=x.platform;document.getElementById("aiTask").textContent=x.task;
+ const names=["推理分析","情報搜尋","流程自動化","內容生成","資料處理"];
+ document.getElementById("features").innerHTML=names.map((n,i)=>`<div class="feature"><div class="k">${n.toUpperCase()}</div><div class="v">${x.features[i]} / 100</div><div class="bar"><i style="width:${x.features[i]}%"></i></div></div>`).join("");
+ document.getElementById("analysisText").textContent=`此 AI 的核心價值是「${x.purpose}」。目前以「${x.task}」為主要任務，平台採用 ${x.platform}。建議在帳號層級將本 AI 定位為「${x.mission}」的專責節點，並與其餘 6 組 AI 形成分工，而不是重複執行相同工作。`;
+ const sig=[["可信度","HIGH", "green"],["負載","NORMAL","green"],["任務風險",x.score<90?"WATCH":"LOW",x.score<90?"amber":"green"]];
+ document.getElementById("signals").innerHTML=sig.map(s=>`<div class="signal"><span>${s[0]}</span><b class="${s[2]}">${s[1]}</b></div>`).join("");
+ document.getElementById("score").innerHTML=x.score+'<small>/ 100</small>';
+ ["s1","s2","s3","s4","s5"].forEach((id,i)=>document.getElementById(id).textContent=x.features[i]);
+ const pts=x.features.map((v,i)=>{const ang=-Math.PI/2+i*2*Math.PI/5;const r=62*v/100;return `${Math.cos(ang)*r},${Math.sin(ang)*r}`}).join(" ");
+ document.getElementById("radarPoly").setAttribute("points",pts);
+}
+function renderMatrix(){
+ document.getElementById("matrix").innerHTML=accounts.map((a,ai)=>`<tr><td>${a.name}</td>${data[ai].map((x,i)=>`<td><span class="pill ${x.status==="busy"?"amber":x.status==="online"?"green":""}">AI-${i+1}</span></td>`).join("")}</tr>`).join("");
+}
+function pickAccount(i){selectedAccount=i;selectedAI=0;renderAccounts();renderAIList();renderDetail()}
+function pickAI(i){selectedAI=i;renderAIList();renderDetail()}
+function tick(){const d=new Date(),s=[d.getHours(),d.getMinutes(),d.getSeconds()].map(x=>String(x).padStart(2,"0")).join(":");document.getElementById("clock").textContent=s;document.getElementById("sync").textContent=s}
+const flat=data.flat();document.getElementById("online").textContent=flat.filter(x=>x.status!=="offline").length;document.getElementById("active").textContent=flat.filter(x=>x.status==="busy").length;
+renderAccounts();renderAIList();renderDetail();renderMatrix();tick();setInterval(tick,1000);
+
+/* ---------------- 資料自動讀取（不點就亮） ---------------- */
+async function loadDashboardData(){
+  try {
+    const res = await fetch('dashboard_data.json?t=' + Date.now());
+    if (!res.ok) return;
+    const d = await res.json();
+    // 更新 KPI（大盤）
+    if (d.market) {
+      const m = d.market;
+      const el = document.getElementById('ovMarket');
+      if (el) el.textContent = `${m.price.toFixed(0)}（${m.change >= 0 ? '+' : ''}${m.change}）`;
+    }
+    // 更新節點狀態（寇德/X1）
+    if (d.nodes) {
+      const nm = {};
+      d.nodes.forEach(n => nm[n.name] = n.online);
+      document.querySelectorAll('[data-node]').forEach(el => {
+        const online = nm[el.dataset.node];
+        el.textContent = online ? '● 在線' : '○ 離線';
+        el.style.color = online ? '#35e67b' : '#ff5566';
+      });
+    }
+    // 更新時間戳
+    const ts = document.getElementById('dwSync');
+    if (ts && d.updated) ts.textContent = d.updated;
+  } catch(e) { /* 靜默（檔案不存在時不影響） */ }
+}
+loadDashboardData();
+setInterval(loadDashboardData, 60000); // 每 60 秒自動更新（不點就亮！）
+
+/* ============================================================
+   對話抽屜：點 💬 開啟，串接 Cloudflare Worker（金鑰不進前端）。
+   把 WORKER_URL 換成你部署好的 Worker 網址即可連上真實 AI；
+   留空則顯示模擬回覆，方便先確認介面行為。
+   ============================================================ */
+const WORKER_URL = ""; // 例如 "https://ai-vault.yourname.workers.dev/chat"
+let chatTarget = null;
+
+function openChat(ai, i){
+  const acct = accounts[ai], x = data[ai][i];
+  chatTarget = { account: acct.name, platform: x.platform, role: x.role };
+  document.getElementById("dwName").textContent = `AI-${String(i+1).padStart(2,"0")} ${x.role}`;
+  document.getElementById("dwAcct").textContent = `${acct.name} · ${acct.alias}`;
+  document.getElementById("dwDot").className = "dot " + x.status;
+  document.getElementById("dwStatus").textContent = x.status.toUpperCase();
+  document.getElementById("dwPlatform").textContent = x.platform;
+  const chat = document.getElementById("dwChat");
+  chat.innerHTML = x.task
+    ? `<div class="msg ai"><span class="role">${x.platform}</span>目前任務：${x.task}，需要我先回報進度嗎？</div>`
+    : `<div class="empty-hint">尚無對話紀錄<br>在下方輸入訊息，直接跟 ${x.platform}（${acct.name}）對話</div>`;
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("scrim").classList.add("show");
+}
+function closeChat(){
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("scrim").classList.remove("show");
+}
+document.getElementById("dwClose").addEventListener("click", closeChat);
+document.getElementById("scrim").addEventListener("click", closeChat);
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function sendChat(){
+  const input = document.getElementById("dwInput");
+  const text = input.value.trim();
+  if(!text || !chatTarget) return;
+  const chat = document.getElementById("dwChat");
+  chat.querySelector(".empty-hint")?.remove();
+  chat.insertAdjacentHTML("beforeend", `<div class="msg me"><span class="role">你</span>${escapeHtml(text)}</div>`);
+  input.value = "";
+  chat.scrollTop = chat.scrollHeight;
+  const btn = document.getElementById("dwSend");
+  btn.disabled = true;
+
+  let reply;
+  try {
+    if (WORKER_URL) {
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ account: chatTarget.account, platform: chatTarget.platform, message: text })
+      });
+      const json = await res.json();
+      reply = json.reply || "（Worker 未回傳內容）";
+    } else {
+      await new Promise(r => setTimeout(r, 450));
+      reply = `（示範回覆）${chatTarget.platform} 收到：「${text}」— 尚未連接 Cloudflare Worker，這是模擬回應。`;
+    }
+  } catch (err) {
+    reply = "連線失敗，請確認 Worker 網址與 CORS 設定。";
+  }
+  chat.insertAdjacentHTML("beforeend", `<div class="msg ai"><span class="role">${chatTarget.platform}</span>${escapeHtml(reply)}</div>`);
+  chat.scrollTop = chat.scrollHeight;
+  btn.disabled = false;
+}
+document.getElementById("dwSend").addEventListener("click", sendChat);
+document.getElementById("dwInput").addEventListener("keydown", e => { if(e.key === "Enter") sendChat(); });
+
+/* ---------------- 背景：神經網路節點動畫（保留自前版） ---------------- */
+(function initNeuralBackground(){
+  const canvas = document.getElementById("neural-canvas");
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W, H, nodes = [], pulses = [];
+  const NODE_COUNT = 42;
+  const MAX_DIST = 150;
+
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  window.addEventListener("resize", resize);
+  resize();
+
+  nodes = Array.from({length: NODE_COUNT}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    vx: (Math.random()-0.5)*0.18, vy: (Math.random()-0.5)*0.18,
+    r: Math.random()*1.4 + 1
+  }));
+
+  function maybeSpawnPulse(){
+    if (nodes.length < 2 || Math.random() > 0.02) return;
+    const a = nodes[Math.floor(Math.random()*nodes.length)];
+    const b = nodes[Math.floor(Math.random()*nodes.length)];
+    if (a===b || Math.hypot(a.x-b.x, a.y-b.y) > MAX_DIST) return;
+    pulses.push({a, b, t:0});
+  }
+
+  function step(){
+    ctx.clearRect(0,0,W,H);
+    nodes.forEach(n => {
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+    });
+    for (let i=0;i<nodes.length;i++){
+      for (let j=i+1;j<nodes.length;j++){
+        const a=nodes[i], b=nodes[j];
+        const d=Math.hypot(a.x-b.x, a.y-b.y);
+        if (d < MAX_DIST){
+          ctx.strokeStyle = `rgba(0,229,255,${(1 - d/MAX_DIST) * 0.15})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(0,229,255,0.5)";
+      ctx.shadowColor = "rgba(0,229,255,0.8)";
+      ctx.shadowBlur = 6;
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+    maybeSpawnPulse();
+    pulses.forEach(p => p.t += 0.02);
+    pulses = pulses.filter(p => p.t <= 1);
+    pulses.forEach(p => {
+      const x = p.a.x + (p.b.x-p.a.x)*p.t, y = p.a.y + (p.b.y-p.a.y)*p.t;
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.shadowColor = "rgba(0,229,255,1)";
+      ctx.shadowBlur = 10;
+      ctx.arc(x, y, 1.8, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+    if (!reduceMotion) requestAnimationFrame(step);
+  }
+  step();
+})();
+</script>
+</body>
+</html>

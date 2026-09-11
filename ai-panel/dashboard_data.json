@@ -1,0 +1,32 @@
+{
+  "updated": "2026-09-11 12:50:20",
+  "market": {
+    "price": 46319.71,
+    "change": -621,
+    "pct": -1.32,
+    "high": 46651.21,
+    "low": 45942.44,
+    "time": "12:50:10"
+  },
+  "nodes": [
+    {
+      "name": "寇德 CODER-AI",
+      "online": true,
+      "hostname": "CODER-AI"
+    },
+    {
+      "name": "X1 小鉉",
+      "online": true,
+      "hostname": "X1-AI"
+    }
+  ],
+  "local": {
+    "gateway": true,
+    "cron_fail": 0,
+    "cron_total": 146
+  },
+  "hermes": {
+    "host": "CARE-AI 凱兒（中樞）",
+    "online": true
+  }
+}
